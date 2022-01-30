@@ -5,6 +5,7 @@ int boardX, boardY;
 int gameState = 0;
 int aiPlayer = 1;
 int previousGameState = 1; 
+boolean draw = false;
 
 
 void setup(){
@@ -61,8 +62,26 @@ void draw(){
         }
       }
     }
-    if(checkWin()) gameState = 3;
-    if(checkDraw()) gameState = 3;
+    if(checkWin()){gameState = 3; draw = false;}
+    if(checkDraw()){gameState = 3; draw = true;}
+  }else if(gameState == 3){
+    if(!draw){
+      stroke(250, 177, 30);
+      fill(43, 92, 252);
+      strokeWeight(3);
+      rect(170, 260, 255, 50, 7);
+      textSize(40);
+      fill(250, 177, 30);
+      text("Player " + str(player % 2 + 1) + " wins", 170, 300);
+    }else{
+      stroke(250, 177, 30);
+      fill(43, 92, 252);
+      strokeWeight(3);
+      rect(245, 260, 102, 50, 7);
+      textSize(40);
+      fill(250, 177, 30);
+      text("Draw", 245, 300);
+    }
   }
 }
 
@@ -72,32 +91,57 @@ void mousePressed(){
       gameState = 1;
     }else if(mouseX >= 195 && mouseX <= 195+205 && mouseY >= 310 && mouseY <= 310 +55){
       gameState = 2;
+      player = 1;
+      int[] bestMove = findBestMove(board); 
+      board[bestMove[0]][bestMove[1]] = player;
       player = 2;
-      board[0][0] = 1;
     }
   }
   else if(gameState == 1){
     //Game mouse
     gameMouse();
+    if(checkWin())return;
+    if(checkDraw())return;
     previousGameState = 1;
   }else if(gameState == 2){
     //Mouse
     gameMouse();
     //AI
+    if(checkWin())return;
+    if(checkDraw())return;
     int[] bestMove = findBestMove(board); 
-    board[bestMove[0]][bestMove[1]] = 1;
+    board[bestMove[0]][bestMove[1]] = player;
+    if(player == 1){
+          player = 2;
+        }else{
+          player = 1;
+        }
     previousGameState = 2;
   }
   else if(gameState == 3){
     for(int i = 0; i < board.length; i++){
       for(int j = 0; j < board[i].length; j++){
           board[i][j] = 0;
-          if(previousGameState == 2){
-            board[0][0] = 1;
-          }
       }
     }
     gameState = previousGameState;
+    if(gameState == 2 && player == 1){
+      int[] bestMove = findBestMove(board); 
+      board[bestMove[0]][bestMove[1]] = player;
+      player = 2; 
+    }
+  }
+}
+
+void keyPressed(){
+  if(key == ESC){
+    for(int i = 0; i < board.length; i++){
+      for(int j = 0; j < board[i].length; j++){
+          board[i][j] = 0;
+      }
+    }
+    gameState = 0;
+    key = 0;
   }
 }
 
@@ -122,7 +166,7 @@ void gameMouse(){
     }
     if(board[boardY][boardX]  == 0){
       board[boardY][boardX] = player;
-      if(gameState == 1){
+      if(gameState == 1 || gameState == 2){
         if(player == 1){
           player = 2;
         }else{
@@ -185,6 +229,3 @@ boolean checkWin(){
   }
   return false;
 }
-
-
-//AI program

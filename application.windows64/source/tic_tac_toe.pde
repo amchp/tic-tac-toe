@@ -5,6 +5,7 @@ int boardX, boardY;
 int gameState = 0;
 int aiPlayer = 1;
 int previousGameState = 1; 
+boolean draw = false;
 
 
 void setup(){
@@ -51,18 +52,36 @@ void draw(){
     line(20,400,580,400);
     for(int i = 0; i < board.length; i++){
       for(int j = 0; j < board[i].length; j++){
-        if(board[i][j] == 1){
+        if(board[j][i] == 1){
           //X's + or - 30 for X points: 30, 170, 230, 370, 430, 570
           line(i*200 + 30,j*200 + 30,(i + 1)*200 - 30,(j + 1)* 200 - 30 );
           line(i*200 + 30,(j + 1)* 200 - 30 ,(i + 1)*200 - 30,j*200 + 30);
-        }else if(board[i][j] == 2){
+        }else if(board[j][i] == 2){
           //Circle middle of square and size 150 points: 100, 300, 500
           circle((i+1)*200 - 100, (j+1)*200 - 100, 150);
         }
       }
     }
-    if(checkWin()) gameState = 3;
-    if(checkDraw()) gameState = 3;
+    if(checkWin()){gameState = 3; draw = false;}
+    if(checkDraw()){gameState = 3; draw = true;}
+  }else if(gameState == 3){
+    if(!draw){
+      stroke(250, 177, 30);
+      fill(43, 92, 252);
+      strokeWeight(3);
+      rect(170, 260, 255, 50, 7);
+      textSize(40);
+      fill(250, 177, 30);
+      text("Player " + str(player % 2 + 1) + " wins", 170, 300);
+    }else{
+      stroke(250, 177, 30);
+      fill(43, 92, 252);
+      strokeWeight(3);
+      rect(245, 260, 102, 50, 7);
+      textSize(40);
+      fill(250, 177, 30);
+      text("Draw", 245, 300);
+    }
   }
 }
 
@@ -72,20 +91,31 @@ void mousePressed(){
       gameState = 1;
     }else if(mouseX >= 195 && mouseX <= 195+205 && mouseY >= 310 && mouseY <= 310 +55){
       gameState = 2;
+      player = 1;
+      int[] bestMove = findBestMove(board); 
+      board[bestMove[0]][bestMove[1]] = player;
       player = 2;
-      board[0][0] = 1;
     }
   }
   else if(gameState == 1){
     //Game mouse
     gameMouse();
+    if(checkWin())return;
+    if(checkDraw())return;
     previousGameState = 1;
   }else if(gameState == 2){
     //Mouse
     gameMouse();
     //AI
+    if(checkWin())return;
+    if(checkDraw())return;
     int[] bestMove = findBestMove(board); 
-    board[bestMove[0]][bestMove[1]] = 1;
+    board[bestMove[0]][bestMove[1]] = player;
+    if(player == 1){
+          player = 2;
+        }else{
+          player = 1;
+        }
     previousGameState = 2;
   }
   else if(gameState == 3){
@@ -95,6 +125,23 @@ void mousePressed(){
       }
     }
     gameState = previousGameState;
+    if(gameState == 2 && player == 1){
+      int[] bestMove = findBestMove(board); 
+      board[bestMove[0]][bestMove[1]] = player;
+      player = 2; 
+    }
+  }
+}
+
+void keyPressed(){
+  if(key == ESC){
+    for(int i = 0; i < board.length; i++){
+      for(int j = 0; j < board[i].length; j++){
+          board[i][j] = 0;
+      }
+    }
+    gameState = 0;
+    key = 0;
   }
 }
 
@@ -117,9 +164,9 @@ void gameMouse(){
     else if(mouseY >= 400 && mouseY <= 600){
       boardY = 2;
     }
-    if(board[boardX][boardY]  == 0){
-      board[boardX][boardY] = player;
-      if(gameState == 1){
+    if(board[boardY][boardX]  == 0){
+      board[boardY][boardX] = player;
+      if(gameState == 1 || gameState == 2){
         if(player == 1){
           player = 2;
         }else{
@@ -134,17 +181,6 @@ boolean checkDraw(){
   for(int i = 0; i < board.length; i++){
     for(int j = 0; j < board[i].length; j++){
       if(board[i][j] != 0){
-        count++;
-      }
-    }
-  }
-  return count == 9;
-}
-boolean checkDraw(int[][] drawBoard){
-  int count = 0;
-  for(int i = 0; i < drawBoard.length; i++){
-    for(int j = 0; j < drawBoard[i].length; j++){
-      if(drawBoard[i][j] != 0){
         count++;
       }
     }
@@ -193,175 +229,3 @@ boolean checkWin(){
   }
   return false;
 }
-
-
-//AI program
-int evaluate(int b[][]) 
-{ 
-    // Checking for Rows for X or O victory. 
-    for (int row = 0; row<3; row++) 
-    { 
-        if (b[row][0]==b[row][1] && 
-            b[row][1]==b[row][2]) 
-        { 
-            if (b[row][0]==1) 
-                return +10; 
-            else if (b[row][0]==2) 
-                return -10; 
-        } 
-    } 
-  
-    // Checking for Columns for X or O victory. 
-    for (int col = 0; col<3; col++) 
-    { 
-        if (b[0][col]==b[1][col] && 
-            b[1][col]==b[2][col]) 
-        { 
-            if (b[0][col]==1) 
-                return +10; 
-  
-            else if (b[0][col]==2) 
-                return -10; 
-        } 
-    } 
-  
-    // Checking for Diagonals for X or O victory. 
-    if (b[0][0]==b[1][1] && b[1][1]==b[2][2]) 
-    { 
-        if (b[0][0]==1) 
-            return +10; 
-        else if (b[0][0]==2) 
-            return -10; 
-    } 
-  
-    if (b[0][2]==b[1][1] && b[1][1]==b[2][0]) 
-    { 
-        if (b[0][2]==1) 
-            return +10; 
-        else if (b[0][2]==2) 
-            return -10; 
-    } 
-  
-    // Else if none of them have won then return 0 
-    return 0; 
-}
-
-int minimax(int board[][], int depth, boolean isMax) 
-{ 
-    int score = evaluate(board); 
-  
-    // If Maximizer has won the game return his/her 
-    // evaluated score 
-    if (score == 10) 
-        return score; 
-  
-    // If Minimizer has won the game return his/her 
-    // evaluated score 
-    if (score == -10) 
-        return score; 
-  
-    // If there are no more moves and no winner then 
-    // it is a tie 
-    if (checkDraw(board)==false) 
-        return 0; 
-  
-    // If this maximizer's move 
-    if (isMax) 
-    { 
-        int best = -1000; 
-  
-        // Traverse all cells 
-        for (int i = 0; i<3; i++) 
-        { 
-            for (int j = 0; j<3; j++) 
-            { 
-                // Check if cell is empty 
-                if (board[i][j]==0) 
-                { 
-                    // Make the move 
-                    board[i][j] = 1; 
-  
-                    // Call minimax recursively and choose 
-                    // the maximum value 
-                    best = max( best, 
-                        minimax(board, depth+1, !isMax) ); 
-  
-                    // Undo the move 
-                    board[i][j] = 0; 
-                } 
-            } 
-        } 
-        return best; 
- } 
-  // If this minimizer's move 
-   else
-   { 
-        int best = 1000; 
-  
-        // Traverse all cells 
-        for (int i = 0; i<3; i++) 
-        { 
-            for (int j = 0; j<3; j++) 
-            { 
-                // Check if cell is empty 
-                if (board[i][j]==0) 
-                { 
-                    // Make the move 
-                    board[i][j] = 2; 
-  
-                    // Call minimax recursively and choose 
-                    // the minimum value 
-                    best = min(best, 
-                           minimax(board, depth+1, !isMax)); 
-  
-                    // Undo the move 
-                    board[i][j] = 0; 
-                } 
-            } 
-        } 
-        return best; 
-    } 
-}
-
-int[] findBestMove(int board[][]) 
-{ 
-    int bestVal = -1000; 
-    int[] bestMove = new int[2]; 
-    bestMove[0] = -1; 
-    bestMove[1] = -1; 
-  
-    // Traverse all cells, evaluate minimax function for 
-    // all empty cells. And return the cell with optimal 
-    // value. 
-    for (int i = 0; i<3; i++) 
-    { 
-        for (int j = 0; j<3; j++) 
-        { 
-            // Check if cell is empty 
-            if (board[i][j]==0) 
-            { 
-                // Make the move 
-                board[i][j] = 1; 
-  
-                // compute evaluation function for this 
-                // move. 
-                int moveVal = minimax(board, 0, false); 
-  
-                // Undo the move 
-                board[i][j] = 0; 
-  
-                // If the value of the current move is 
-                // more than the best value, then update 
-                // best/ 
-                if (moveVal > bestVal) 
-                { 
-                    bestMove[0] = i; 
-                    bestMove[1] = j; 
-                    bestVal = moveVal; 
-                } 
-            } 
-        } 
-    } 
-   
-    return bestMove; 
-} 
